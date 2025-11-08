@@ -1,73 +1,212 @@
-# Welcome to your Lovable project
+# SupplyChain - Blockchain Escrow Platform
 
-## Project info
+A full-stack supply chain tracking application with blockchain escrow integration on Arc Testnet. Built with React, TypeScript, and ethers.js v6.
 
-**URL**: https://lovable.dev/projects/a37c620e-ccf7-46ae-ba47-9399bf28ea10
+## Features
 
-## How can I edit this code?
+- **Role-Based Access**: Separate dashboards for Sellers, Buyers, Shippers, and Admins
+- **Invoice Management**: Create and track invoices with smart contract escrow
+- **Blockchain Integration**: Deploy escrow contracts on Arc Testnet using MetaMask
+- **Shipment Tracking**: Real-time milestone updates for shipments
+- **AI Assistant**: Built-in AI helper for guidance and quick actions
+- **Secure Escrow**: Multi-party escrow with agent-controlled release/revert
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS with custom design system
+- **Blockchain**: ethers.js v6, MetaMask integration
+- **Network**: Arc Testnet (chainId: 0x4CEF52)
+- **UI Components**: shadcn/ui with custom variants
+- **State Management**: localStorage (demo), React Query
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a37c620e-ccf7-46ae-ba47-9399bf28ea10) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- MetaMask browser extension
+- Arc Testnet USDC (for testing)
 
-**Use your preferred IDE**
+## Getting Started
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+1. **Clone the repository**
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **Install dependencies**
+```bash
+npm install
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. **Configure environment**
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your Cloudflare Worker URL:
+```
+VITE_WORKER_URL=https://your-worker.workers.dev
+```
+
+4. **Start development server**
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## User Roles
 
-**Use GitHub Codespaces**
+### Seller
+- Create and manage invoices
+- Track invoice status (Draft → Awaiting Buyer → Deployed → Locked → Released)
+- View payment history
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Buyer
+- Review pending invoices
+- Deploy escrow contracts on Arc Testnet
+- Approve USDC spending
+- Deposit funds to lock escrow
 
-## What technologies are used for this project?
+### Shipper
+- View assigned shipments
+- Update shipment milestones:
+  - Pending
+  - Picked Up
+  - In Transit
+  - Customs
+  - Delivered
 
-This project is built with:
+### Admin
+- Perform agent operations (Release/Revert)
+- Requires agent web key (X-AGENT-KEY)
+- Submit evidence CID for decisions
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Arc Testnet Configuration
 
-## How can I deploy this project?
+The app automatically configures MetaMask with Arc Testnet:
 
-Simply open [Lovable](https://lovable.dev/projects/a37c620e-ccf7-46ae-ba47-9399bf28ea10) and click on Share -> Publish.
+- **Chain ID**: 0x4CEF52 (5041234)
+- **RPC**: https://rpc.testnet.arc.network
+- **Explorer**: https://testnet.arcscan.app
+- **Native Currency**: USDC (18 decimals for gas)
+- **ERC-20 USDC**: 0x3600000000000000000000000000000000000000 (6 decimals)
 
-## Can I connect a custom domain to my Lovable project?
+## Cloudflare Worker API Endpoints
 
-Yes, you can!
+Your Worker should implement these endpoints:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `GET /contract-artifact` - Returns escrow contract ABI and bytecode
+- `POST /prepare/approve` - Prepares USDC approval transaction
+- `POST /prepare/deposit` - Prepares deposit transaction
+- `GET /stage?contractAddress=...` - Returns contract stage (OPEN/LOCKED/CLOSED)
+- `POST /agent/release` - Agent-signed release (requires X-AGENT-KEY)
+- `POST /agent/revert` - Agent-signed revert (requires X-AGENT-KEY)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Demo Authentication
+
+This app uses localStorage for demo authentication. To login:
+
+1. Go to `/login`
+2. Select a role (Seller/Buyer/Shipper/Admin)
+3. Enter any email/password
+4. You'll be redirected to your role-specific dashboard
+
+## Smart Contract Integration
+
+### Escrow Deployment Flow (Buyer)
+
+1. **Deploy Contract**
+   - Fetches ABI/bytecode from Worker
+   - Deploys using ethers.js ContractFactory
+   - Constructor: `(depositor, beneficiary, agent, amount, USDC_ADDRESS)`
+
+2. **Approve USDC**
+   - Calls Worker `/prepare/approve`
+   - Signs transaction with MetaMask
+   - Approves escrow contract to spend USDC
+
+3. **Deposit Funds**
+   - Calls Worker `/prepare/deposit`
+   - Signs transaction with MetaMask
+   - Locks funds in escrow (status → LOCKED)
+
+### Agent Operations (Admin)
+
+Release or revert funds using agent key:
+- Input: contract address, evidence CID, agent key
+- Worker validates key via X-AGENT-KEY header
+- Transaction submitted and explorer link shown
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── ai/           # AI Assistant
+│   ├── layout/       # Layout components
+│   ├── wallet/       # Wallet connection
+│   └── ui/           # shadcn components
+├── lib/
+│   ├── auth.ts       # Authentication
+│   ├── storage.ts    # localStorage management
+│   ├── types.ts      # TypeScript types
+│   ├── wallet.ts     # Wallet integration
+│   └── worker-api.ts # API client
+├── pages/
+│   ├── Login.tsx
+│   ├── Seller.tsx
+│   ├── Buyer.tsx
+│   ├── Shipper.tsx
+│   ├── Admin.tsx
+│   ├── CreateInvoice.tsx
+│   ├── BuyerInvoiceDetail.tsx
+│   └── ShipmentDetail.tsx
+└── App.tsx           # Routes & auth
+```
+
+## Design System
+
+The app uses a professional supply chain theme with semantic tokens:
+
+- **Primary**: Deep blue (#1E40AF) for trust
+- **Accent**: Teal (#0D9488) for actions
+- **Status Colors**: Amber (pending), Green (success), Red (errors)
+- **Gradients**: Primary and hero gradients
+- **Typography**: Clean hierarchy with good contrast
+- **Animations**: Smooth transitions
+
+All colors defined in `src/index.css` using HSL values.
+
+## Development
+
+### Build for production
+```bash
+npm run build
+```
+
+### Preview production build
+```bash
+npm run preview
+```
+
+### Type checking
+```bash
+npm run type-check
+```
+
+## Deployment
+
+Deploy to Lovable:
+1. Open [Lovable](https://lovable.dev/projects/a37c620e-ccf7-46ae-ba47-9399bf28ea10)
+2. Click Share → Publish
+3. Your app will be live!
+
+## License
+
+MIT
+
+## Support
+
+For questions or issues, contact support or check the [Lovable documentation](https://docs.lovable.dev).
