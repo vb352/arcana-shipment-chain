@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { isAuthenticated, getCurrentUser } from "./lib/auth";
+import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Seller from "./pages/Seller";
 import Buyer from "./pages/Buyer";
@@ -31,17 +32,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              isAuthenticated() ? (
-                <Navigate to={`/${getCurrentUser()?.role}`} replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
           <Route
             path="/seller"
             element={

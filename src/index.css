@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, hsl(var(--foreground) / 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--foreground) / 0.1) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
